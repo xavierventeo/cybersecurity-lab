@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "eu-west-1"
+  region = "us-east-1"
 }
 
 ##### Configuración de red #####
@@ -43,7 +43,7 @@ resource "aws_instance" "firewall_instance" {
 
 # Recurso para las instancias de Linux
 resource "aws_instance" "linux_instance" {
-  ami           = "ami-0fc3317b37c1269d3" # AMI de Amazon Linux
+  ami           = "ami-0f403e3180720dd7e" # AMI de Amazon Linux
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.private_subnet_linux.id
 
@@ -54,7 +54,7 @@ resource "aws_instance" "linux_instance" {
 
 # Recurso para las instancias de Windows
 resource "aws_instance" "windows_instance" {
-  ami           = "ami-0a6e6f76c99f6999f" # AMI de Windows Server 2016
+  ami           = "ami-04d7825822fe66af3" # AMI de Windows Server 2016
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.private_subnet_windows.id
 
