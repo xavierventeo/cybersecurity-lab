@@ -32,9 +32,7 @@ resource "aws_subnet" "private_subnet_windows" {
 
 # Recurso para el Firewall (pfSense)
 resource "aws_instance" "firewall_instance" {
-  ami           = "ami-049ab87d08d65c4e4" # Community AMI for Firewall OPNsense.
-  #ami           = "ami-0fc3317b37c1269d3" # Community AMI for Firewall OPNsense
-  #instance_type = "m4.large"
+  ami           = "ami-01b551e229612295d" # Community AMI for Firewall PfSense.
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.public_subnet.id
 
