@@ -31,8 +31,10 @@ resource "aws_subnet" "private_subnet_windows" {
 ##### Creación de instancias EC2 #####
 
 # Recurso para el Firewall (pfSense)
-resource "aws_instance" "firewall" {
-  ami           = "ami-0fc3317b37c1269d3" # AMI for Firewall PfSense. AMI Amazon Linux and install pfSense to avoid pfSense AMI costs
+resource "aws_instance" "firewall_instance" {
+  ami           = "ami-049ab87d08d65c4e4" # Community AMI for Firewall OPNsense.
+  #ami           = "ami-0fc3317b37c1269d3" # Community AMI for Firewall OPNsense
+  #instance_type = "m4.large"
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.public_subnet.id
 
@@ -65,7 +67,10 @@ resource "aws_instance" "windows_instance" {
 
 # Bloque output para mostrar información sobre los recursos creados
 output "firewall_public_ip" {
-  value       = aws_instance.firewall.public_ip
+  value = {
+    ip  = aws_instance.firewall_instance.public_ip
+    tag = aws_instance.firewall_instance.tags.Name
+  }
   description = "Dirección IP pública del Firewall"
 }
 
