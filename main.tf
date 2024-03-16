@@ -1,89 +1,117 @@
+# Configuración del proveedor AWS
 provider "aws" {
-  region = "us-east-1"
+  region = "eu-west-1" # Cambia la región según tu preferencia
 }
 
-##### Configuración de red #####
-
-# Recurso para la VPC
+# Creación de la VPC
 resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16" # Rango de direcciones IP de tu VPC
+  cidr_block = "10.0.0.0/16"
 }
 
-# Recurso para la subred pública
-resource "aws_subnet" "public_subnet" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24" # Rango de direcciones IP de tu subred pública
-  map_public_ip_on_launch = true          # Habilita asignación automática de IP pública
-}
-
-# Recurso para la subred privada de Linux
-resource "aws_subnet" "private_subnet_linux" {
+# Creación de subredes
+resource "aws_subnet" "public" {
   vpc_id     = aws_vpc.main.id
-  cidr_block = "10.0.2.0/24" # Rango de direcciones IP de tu subred privada para Linux
+  cidr_block = "10.0.1.0/24"
 }
 
-# Recurso para la subred privada de Windows
-resource "aws_subnet" "private_subnet_windows" {
+resource "aws_subnet" "private" {
   vpc_id     = aws_vpc.main.id
-  cidr_block = "10.0.3.0/24" # Rango de direcciones IP de tu subred privada para Windows
+  cidr_block = "10.0.2.0/24"
 }
 
-##### Creación de instancias EC2 #####
+resource "aws_subnet" "firewall" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "10.0.3.0/24"
+}
 
-# Recurso para el Firewall (pfSense)
-resource "aws_instance" "firewall_instance" {
-  ami           = "ami-01b551e229612295d" # Community AMI for Firewall PfSense.
+# Creación de instancias
+resource "aws_instance" "web_app_instance" {
+  ami           = "ami-074254c177d57d640" # AMI de Amazon Linux
   instance_type = "t2.micro"
-  subnet_id     = aws_subnet.public_subnet.id
-
+  subnet_id     = aws_subnet.public.id
+  #key_name      = "lab_key_pair" # Claves SSH
   tags = {
-    Name = "FirewallServerInstance"
+    Name = "WebAppInstance"
   }
 }
 
-# Recurso para las instancias de Linux
-resource "aws_instance" "linux_instance" {
-  ami           = "ami-0f403e3180720dd7e" # AMI de Amazon Linux
+resource "aws_instance" "db_instance" {
+  ami           = "ami-074254c177d57d640" # AMI de Amazon Linux
   instance_type = "t2.micro"
-  subnet_id     = aws_subnet.private_subnet_linux.id
-
+  subnet_id     = aws_subnet.private.id
+  #key_name      = "lab_key_pair" # Claves SSH
   tags = {
-    Name = "LinuxServerInstance"
+    Name = "DBInstance"
   }
 }
 
-# Recurso para las instancias de Windows
-resource "aws_instance" "windows_instance" {
-  ami           = "ami-04d7825822fe66af3" # AMI de Windows Server 2016
-  instance_type = "t2.micro"
-  subnet_id     = aws_subnet.private_subnet_windows.id
+# Creación de una política de firewall para el Network Firewall
+resource "aws_networkfirewall_firewall_policy" "internal_firewall_policy" {
+  name        = "InternalFirewallPolicy"
+  description = "Policy for the internal network firewall"
 
-  tags = {
-    Name = "WindowsServerInstance"
+  firewall_policy {
+    stateless_default_actions          = ["aws:drop"]
+    stateless_fragment_default_actions = ["aws:drop"]
+    stateful_rule_group_reference {
+      resource_arn = aws_networkfirewall_rule_group.stateful_rule_allow_db.arn
+    }
   }
 }
 
-# Bloque output para mostrar información sobre los recursos creados
-output "firewall_public_ip" {
-  value = {
-    ip  = aws_instance.firewall_instance.public_ip
-    tag = aws_instance.firewall_instance.tags.Name
+# Creación del firewall de red para el tráfico entre las subredes pública y privada
+resource "aws_networkfirewall_firewall" "internal_firewall" {
+  name                = "InternalFirewall"
+  firewall_policy_arn = aws_networkfirewall_firewall_policy.internal_firewall_policy.arn
+  vpc_id              = aws_vpc.main.id
+
+  subnet_mapping {
+    subnet_id = aws_subnet.firewall.id
   }
-  description = "Dirección IP pública del Firewall"
+
 }
 
-output "linux_instance_ip_and_tag" {
-  value = {
-    ip  = aws_instance.linux_instance.private_ip
-    tag = aws_instance.linux_instance.tags.Name
-  }
-  description = "Dirección IP privada y tag de la instancia Linux"
-}
+resource "aws_networkfirewall_rule_group" "stateful_rule_allow_db" {
+  type     = "STATEFUL"
+  name     = "AllowWebToDBTraffic"
+  capacity = 100
 
-output "windows_instance_ip_and_tag" {
-  value = {
-    ip  = aws_instance.windows_instance.private_ip
-    tag = aws_instance.windows_instance.tags.Name
+  rule_group {
+    rule_variables {
+      ip_sets {
+        key = "WEBAPP_INSTANCE"
+        ip_set {
+          definition = ["10.0.1.0/24"]
+        }
+      }
+      ip_sets {
+        key = "DB_INSTANCE"
+        ip_set {
+          definition = ["10.0.2.0/24"]
+        }
+      }
+      port_sets {
+        key = "DB_PORTS"
+        port_set {
+          definition = ["3306", "443", "80"]
+        }
+      }
+    }
+    rules_source {
+      stateful_rule {
+        action = "PASS"
+        header {
+          destination      = "$WEBAPP_INSTANCE"
+          destination_port = "$DB_PORTS"
+          protocol         = "TCP"
+          direction        = "FORWARD"
+          source_port      = "ANY"
+          source           = "$DB_INSTANCE"
+        }
+        rule_option {
+          keyword = "sid:1"
+        }
+      }
+    }
   }
-  description = "Dirección IP privada y tag de la instancia Windows"
 }
