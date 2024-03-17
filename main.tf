@@ -7,31 +7,63 @@ provider "aws" {
 resource "aws_vpc" "lab" {
   cidr_block = "10.0.0.0/16"
   tags = {
-    Name = "lab"
+    Name = "VPC lab"
   }
+}
+
+# Internet Gateway (IGW) creation
+resource "aws_internet_gateway" "gw" {
+  vpc_id = aws_vpc.lab.id
+
+  tags = {
+    Name = "VPC IG Lab"
+  }
+}
+
+# Route table to able flow connectivity throw Internet on public subnets
+resource "aws_route_table" "second_rt" {
+  vpc_id = aws_vpc.lab.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.gw.id
+  }
+
+  tags = {
+    Name = "2nd Route Table"
+  }
+}
+
+# Associate route table to public subnet
+resource "aws_route_table_association" "public_subnet_asso" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.second_rt.id
 }
 
 # Subnets creation
 resource "aws_subnet" "public" {
-  vpc_id     = aws_vpc.lab.id
-  cidr_block = "10.0.1.0/24"
-  map_public_ip_on_launch = true  # Enable automatic public IP assign
+  vpc_id                  = aws_vpc.lab.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "eu-west-1a"
+  map_public_ip_on_launch = true # Enable automatic public IP assign
   tags = {
-    Name = "public"
+    Name = "Public Subnet"
   }
 }
 
 resource "aws_subnet" "private" {
-  vpc_id     = aws_vpc.lab.id
-  cidr_block = "10.0.2.0/24"
+  vpc_id            = aws_vpc.lab.id
+  cidr_block        = "10.0.2.0/24"
+  availability_zone = "eu-west-1b"
   tags = {
-    Name = "private"
+    Name = "Private Subnet"
   }
 }
 
 resource "aws_subnet" "firewall" {
   vpc_id     = aws_vpc.lab.id
   cidr_block = "10.0.3.0/24"
+  availability_zone = "eu-west-1b"
   tags = {
     Name = "firewall"
   }
@@ -42,7 +74,7 @@ resource "aws_instance" "web_app_instance" {
   ami           = "ami-074254c177d57d640" # AMI de Amazon Linux
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.public.id
-  #key_name      = "lab_key_pair" # Claves SSH
+  key_name      = "lab_key_pair" # Claves SSH
   tags = {
     Name = "WebAppInstance"
   }
@@ -52,7 +84,7 @@ resource "aws_instance" "db_instance" {
   ami           = "ami-074254c177d57d640" # AMI de Amazon Linux
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.private.id
-  #key_name      = "lab_key_pair" # Claves SSH
+  key_name      = "lab_key_pair" # Claves SSH
   tags = {
     Name = "DBInstance"
   }
@@ -151,7 +183,7 @@ output "db_instance_private_ip_and_name" {
 
 output "firewall_name" {
   value = {
-    name  = aws_networkfirewall_firewall.internal_firewall.name
+    name = aws_networkfirewall_firewall.internal_firewall.name
   }
   description = "AWS Network firewall"
 }
