@@ -5,7 +5,9 @@ provider "aws" {
 
 # VPC creation
 resource "aws_vpc" "lab" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
   tags = {
     Name = "VPC lab"
   }
@@ -21,7 +23,7 @@ resource "aws_internet_gateway" "gw" {
 }
 
 # Route table to able flow connectivity throw Internet on public subnets
-resource "aws_route_table" "second_rt" {
+resource "aws_route_table" "lab_rtb-public" {
   vpc_id = aws_vpc.lab.id
 
   route {
@@ -30,14 +32,14 @@ resource "aws_route_table" "second_rt" {
   }
 
   tags = {
-    Name = "2nd Route Table"
+    Name = "Public Lab Route Table"
   }
 }
 
 # Associate route table to public subnet
 resource "aws_route_table_association" "public_subnet_asso" {
   subnet_id      = aws_subnet.public.id
-  route_table_id = aws_route_table.second_rt.id
+  route_table_id = aws_route_table.lab_rtb-public.id
 }
 
 # Subnets creation
@@ -61,8 +63,8 @@ resource "aws_subnet" "private" {
 }
 
 resource "aws_subnet" "firewall" {
-  vpc_id     = aws_vpc.lab.id
-  cidr_block = "10.0.3.0/24"
+  vpc_id            = aws_vpc.lab.id
+  cidr_block        = "10.0.3.0/24"
   availability_zone = "eu-west-1b"
   tags = {
     Name = "firewall"
@@ -79,6 +81,8 @@ resource "aws_instance" "web_app_instance" {
     Name = "WebAppInstance"
   }
 }
+
+# TODO Create SG enabling TCP and SSH 
 
 resource "aws_instance" "db_instance" {
   ami           = "ami-074254c177d57d640" # AMI de Amazon Linux
