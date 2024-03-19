@@ -71,6 +71,16 @@ resource "aws_subnet" "firewall" {
   }
 }
 
+data "aws_secretsmanager_secret" "allowed_ip_address" {
+  name = "AllowedIpAddress"
+}
+data "aws_secretsmanager_secret_version" "allowed_ip_address_version" {
+  secret_id = data.aws_secretsmanager_secret.allowed_ip_address.id
+}
+locals {
+  allowed_ip = jsondecode(data.aws_secretsmanager_secret_version.allowed_ip_address_version.secret_string)["allowed_ip_address"]
+}
+
 # SG for instances with public access
 resource "aws_security_group" "web_app_instance_sg" {
   name        = "instance-security-group"
@@ -81,16 +91,16 @@ resource "aws_security_group" "web_app_instance_sg" {
   ingress {
     from_port   = 22
     to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ip_address]
+    protocol    = var.tcp_protocol
+    cidr_blocks = [local.allowed_ip]
   }
 
   # Regla de entrada para permitir el tráfico HTTP desde la dirección IP permitida
   ingress {
     from_port   = 80
     to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = [var.allowed_ip_address]
+    protocol    = var.tcp_protocol
+    cidr_blocks = [local.allowed_ip]
   }
 
   # Regla de salida para permitir todo el tráfico saliente
@@ -105,11 +115,11 @@ resource "aws_security_group" "web_app_instance_sg" {
 
 # EC2 instances creation
 resource "aws_instance" "web_app_instance" {
-  ami             = "ami-074254c177d57d640" # AMI de Amazon Linux
-  instance_type   = "t2.micro"
-  subnet_id       = aws_subnet.public.id
+  ami                    = "ami-074254c177d57d640" # AMI de Amazon Linux
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.web_app_instance_sg.id]
-  key_name        = "lab_key_pair" # Claves SSH
+  key_name               = "lab_key_pair" # Claves SSH
   tags = {
     Name = "WebAppInstance"
   }
@@ -125,6 +135,7 @@ resource "aws_instance" "db_instance" {
     Name = "DBInstance"
   }
 }
+
 /*
 # AWS Network Firewall to control traffic between the web application on the public subnet and the database on the private subnet
 
