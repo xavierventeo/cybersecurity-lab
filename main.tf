@@ -71,6 +71,8 @@ resource "aws_subnet" "firewall" {
   }
 }
 
+# Retreive sensitive Allowed IPs from AWS Secrets Manager
+# Only for training purposes. It could be done declaring it on tfvars file
 data "aws_secretsmanager_secret" "allowed_ip_address" {
   name = "AllowedIpAddress"
 }
