@@ -71,19 +71,51 @@ resource "aws_subnet" "firewall" {
   }
 }
 
+# SG for instances with public access
+resource "aws_security_group" "web_app_instance_sg" {
+  name        = "instance-security-group"
+  description = "Security group for EC2 instance"
+  vpc_id      = aws_vpc.lab.id
+
+  # Regla de entrada para permitir el tráfico SSH desde la dirección IP permitida
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_ip_address]
+  }
+
+  # Regla de entrada para permitir el tráfico HTTP desde la dirección IP permitida
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [var.allowed_ip_address]
+  }
+
+  # Regla de salida para permitir todo el tráfico saliente
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+
 # EC2 instances creation
 resource "aws_instance" "web_app_instance" {
-  ami           = "ami-074254c177d57d640" # AMI de Amazon Linux
-  instance_type = "t2.micro"
-  subnet_id     = aws_subnet.public.id
-  key_name      = "lab_key_pair" # Claves SSH
+  ami             = "ami-074254c177d57d640" # AMI de Amazon Linux
+  instance_type   = "t2.micro"
+  subnet_id       = aws_subnet.public.id
+  vpc_security_group_ids = [aws_security_group.web_app_instance_sg.id]
+  key_name        = "lab_key_pair" # Claves SSH
   tags = {
     Name = "WebAppInstance"
   }
 }
 
 # TODO Create SG enabling TCP and SSH 
-
 resource "aws_instance" "db_instance" {
   ami           = "ami-074254c177d57d640" # AMI de Amazon Linux
   instance_type = "t2.micro"
@@ -93,7 +125,7 @@ resource "aws_instance" "db_instance" {
     Name = "DBInstance"
   }
 }
-
+/*
 # AWS Network Firewall to control traffic between the web application on the public subnet and the database on the private subnet
 
 # Firewall stateful rule group to allow traffic for the database
@@ -191,3 +223,4 @@ output "firewall_name" {
   }
   description = "AWS Network firewall"
 }
+*/
