@@ -70,7 +70,7 @@ resource "aws_subnet" "firewall" {
     Name = "firewall"
   }
 }
-
+/*
 # Retreive sensitive Allowed IPs from AWS Secrets Manager
 # Only for training purposes. It could be done declaring it on tfvars file
 data "aws_secretsmanager_secret" "allowed_ip_address" {
@@ -82,7 +82,7 @@ data "aws_secretsmanager_secret_version" "allowed_ip_address_version" {
 locals {
   allowed_ip = jsondecode(data.aws_secretsmanager_secret_version.allowed_ip_address_version.secret_string)["allowed_ip_address"]
 }
-
+*/
 # SG for instances with public access
 resource "aws_security_group" "web_app_instance_sg" {
   name        = "instance-security-group"
@@ -93,8 +93,8 @@ resource "aws_security_group" "web_app_instance_sg" {
   ingress {
     from_port   = 22
     to_port     = 22
-    protocol    = var.tcp_protocol
-    cidr_blocks = [local.allowed_ip]
+    protocol    = var.tcp_protocol         #protocol expects a simple string
+    cidr_blocks = [var.allowed_ip_address] #cidr_blocks expects a list of strings
   }
 
   # Regla de entrada para permitir el tráfico HTTP desde la dirección IP permitida
@@ -102,7 +102,7 @@ resource "aws_security_group" "web_app_instance_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = var.tcp_protocol
-    cidr_blocks = [local.allowed_ip]
+    cidr_blocks = [var.allowed_ip_address]
   }
 
   # Regla de salida para permitir todo el tráfico saliente
@@ -113,7 +113,6 @@ resource "aws_security_group" "web_app_instance_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-
 
 # EC2 instances creation
 resource "aws_instance" "web_app_instance" {
