@@ -48,6 +48,23 @@ variable "all_protocols" {
   default = "-1"
 }
 
+variable "http_port" {
+  description = "HTTP port"
+  type        = number
+  default     = 80
+}
+
+variable "ssh_port" {
+  description = "SSH port"
+  type        = number
+  default     = 22
+}
+
+variable "zero_port" {
+  description = "Port for allowed outbound traffic (default: 0)"
+  default     = 0
+}
+
 variable "allowed_ip_address" {
   description = "Allowed IP address for SSH access"
   type        = string

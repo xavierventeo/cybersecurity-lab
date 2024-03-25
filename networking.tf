@@ -74,24 +74,24 @@ resource "aws_security_group" "web_app_instance_sg" {
 
   # Regla de entrada para permitir el tráfico SSH desde la dirección IP permitida
   ingress {
-    from_port   = 22
-    to_port     = 22
+    from_port   = var.ssh_port
+    to_port     = var.ssh_port
     protocol    = var.tcp_protocol         #protocol expects a simple string
     cidr_blocks = [var.allowed_ip_address] #cidr_blocks expects a list of strings
   }
 
   # Regla de entrada para permitir el tráfico HTTP desde la dirección IP permitida
   ingress {
-    from_port   = 80
-    to_port     = 80
+    from_port   = var.http_port
+    to_port     = var.http_port
     protocol    = var.tcp_protocol
     cidr_blocks = [var.allowed_ip_address]
   }
 
   # Regla de salida para permitir todo el tráfico saliente
   egress {
-    from_port = 0
-    to_port   = 0
+    from_port = var.zero_port
+    to_port   = var.zero_port
     protocol  = var.all_protocols
 
     cidr_blocks = [var.cidr_block_all_traffic]
