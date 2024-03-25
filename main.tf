@@ -1,11 +1,11 @@
 # AWS provider configuration
 provider "aws" {
-  region = "eu-west-1" # Europe (Ireland)
+  region = var.region
 }
 
 # VPC creation
 resource "aws_vpc" "lab" {
-  cidr_block           = "10.0.0.0/16"
+  cidr_block           = var.vpc_cidr_block
   enable_dns_hostnames = true
   enable_dns_support   = true
   tags = {
@@ -27,7 +27,7 @@ resource "aws_route_table" "lab_rtb-public" {
   vpc_id = aws_vpc.lab.id
 
   route {
-    cidr_block = "0.0.0.0/0"
+    cidr_block = var.cidr_block_all_traffic
     gateway_id = aws_internet_gateway.gw.id
   }
 
@@ -45,8 +45,8 @@ resource "aws_route_table_association" "public_subnet_asso" {
 # Subnets creation
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.lab.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "eu-west-1a"
+  cidr_block              = var.subnet_cidr_block_public
+  availability_zone       = var.availability_zone
   map_public_ip_on_launch = true # Enable automatic public IP assign
   tags = {
     Name = "Public Subnet"
@@ -55,8 +55,8 @@ resource "aws_subnet" "public" {
 
 resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.lab.id
-  cidr_block        = "10.0.2.0/24"
-  availability_zone = "eu-west-1b"
+  cidr_block        = var.subnet_cidr_block_private
+  availability_zone = var.availability_zone
   tags = {
     Name = "Private Subnet"
   }
@@ -64,25 +64,13 @@ resource "aws_subnet" "private" {
 
 resource "aws_subnet" "firewall" {
   vpc_id            = aws_vpc.lab.id
-  cidr_block        = "10.0.3.0/24"
-  availability_zone = "eu-west-1b"
+  cidr_block        = var.subnet_cidr_block_firewall
+  availability_zone = var.availability_zone
   tags = {
     Name = "firewall"
   }
 }
-/*
-# Retreive sensitive Allowed IPs from AWS Secrets Manager
-# Only for training purposes. It could be done declaring it on tfvars file
-data "aws_secretsmanager_secret" "allowed_ip_address" {
-  name = "AllowedIpAddress"
-}
-data "aws_secretsmanager_secret_version" "allowed_ip_address_version" {
-  secret_id = data.aws_secretsmanager_secret.allowed_ip_address.id
-}
-locals {
-  allowed_ip = jsondecode(data.aws_secretsmanager_secret_version.allowed_ip_address_version.secret_string)["allowed_ip_address"]
-}
-*/
+
 # SG for instances with public access
 resource "aws_security_group" "web_app_instance_sg" {
   name        = "instance-security-group"
@@ -109,29 +97,55 @@ resource "aws_security_group" "web_app_instance_sg" {
   egress {
     from_port   = 0
     to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    protocol    = var.all_protocols
+    cidr_blocks = [var.cidr_block_all_traffic]
   }
 }
 
 # EC2 instances creation
 resource "aws_instance" "web_app_instance" {
-  ami                    = "ami-074254c177d57d640" # AMI de Amazon Linux
-  instance_type          = "t2.micro"
+  ami                    = var.ami # AMI de Amazon Linux
+  instance_type          = var.instance_type
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.web_app_instance_sg.id]
-  key_name               = "lab_key_pair" # Claves SSH
+  key_name               = var.key_name # Claves SSH
   tags = {
     Name = "WebAppInstance"
   }
 }
 
+/*
+resource "aws_db_subnet_group" "db_private_subnet_group" {
+  name       = "rds-dvwa"
+  subnet_ids = aws_subnet.private.id
+
+  tags = {
+    Name = "RDS DVWA"
+  }
+}
+
+# RDS Instance creation
+resource "aws_db_instance" "db_instance" {
+  allocated_storage    = 10
+  db_name              = "mydb"
+  engine               = "mysql"
+  engine_version       = "5.7"
+  instance_class       = "db.t3.micro"
+  username             = "foo"
+  password             = "foobarbaz"
+  parameter_group_name = "default.mysql5.7"
+  skip_final_snapshot  = true
+  db_subnet_group_name   = aws_db_subnet_group.db_private_subnet_group.name
+  vpc_security_group_ids = [aws_security_group.rds.id]
+}
+*/
+
 # TODO Create SG enabling TCP and SSH 
 resource "aws_instance" "db_instance" {
-  ami           = "ami-074254c177d57d640" # AMI de Amazon Linux
-  instance_type = "t2.micro"
+  ami           = var.ami # AMI de Amazon Linux
+  instance_type = var.instance_type
   subnet_id     = aws_subnet.private.id
-  key_name      = "lab_key_pair" # Claves SSH
+  key_name      = var.key_name # Claves SSH
   tags = {
     Name = "DBInstance"
   }
@@ -200,7 +214,6 @@ resource "aws_networkfirewall_firewall_policy" "internal_firewall_policy" {
   }
 }
 
-
 # AWS Network Firewall creation attached to the VPC and firewall subnet. Previous policy attached
 resource "aws_networkfirewall_firewall" "internal_firewall" {
   name                = "InternalFirewall"
@@ -211,6 +224,14 @@ resource "aws_networkfirewall_firewall" "internal_firewall" {
     subnet_id = aws_subnet.firewall.id
   }
 }
+
+output "firewall_name" {
+  value = {
+    name = aws_networkfirewall_firewall.internal_firewall.name
+  }
+  description = "AWS Network firewall"
+}
+*/
 
 # Created resources outputs
 output "web_app_instance_public_ip_and_name" {
@@ -228,11 +249,3 @@ output "db_instance_private_ip_and_name" {
   }
   description = "DataBase instance and private IP"
 }
-
-output "firewall_name" {
-  value = {
-    name = aws_networkfirewall_firewall.internal_firewall.name
-  }
-  description = "AWS Network firewall"
-}
-*/
