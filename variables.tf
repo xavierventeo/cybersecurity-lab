@@ -49,9 +49,14 @@ variable "allowed_ip_address" {
   default     = "0.0.0.0/0" # All traffic by default
 }
 
-variable "ami" {
+variable "ami_amazon_linux" {
   type    = string
   default = "ami-074254c177d57d640"
+}
+
+variable "ami_ubuntu" {
+  type    = string
+  default = "ami-0c1c30571d2dae5c9"
 }
 
 variable "instance_type" {
@@ -59,7 +64,7 @@ variable "instance_type" {
   default = "t2.micro"
 }
 
-variable "key_name" {
+variable "ssh_key_name" {
   type    = string
   default = "lab_key_pair"
 }

@@ -95,9 +95,9 @@ resource "aws_security_group" "web_app_instance_sg" {
 
   # Regla de salida para permitir todo el tráfico saliente
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = var.all_protocol
+    from_port = 0
+    to_port   = 0
+    protocol  = var.all_protocols
 
     cidr_blocks = [var.cidr_block_all_traffic]
   }
@@ -105,11 +105,11 @@ resource "aws_security_group" "web_app_instance_sg" {
 
 # EC2 instances creation
 resource "aws_instance" "web_app_instance" {
-  ami                    = var.ami # AMI de Amazon Linux
+  ami                    = var.ami_ubuntu
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.web_app_instance_sg.id]
-  key_name               = var.key_name # Claves SSH
+  key_name               = var.ssh_key_name # Claves SSH
   tags = {
     Name = "WebAppInstance"
   }
@@ -143,10 +143,10 @@ resource "aws_db_instance" "db_instance" {
 
 # TODO Create SG enabling TCP and SSH 
 resource "aws_instance" "db_instance" {
-  ami           = var.ami # AMI de Amazon Linux
+  ami           = var.ami_amazon_linux
   instance_type = var.instance_type
   subnet_id     = aws_subnet.private.id
-  key_name      = var.key_name # Claves SSH
+  key_name      = var.ssh_key_name # Claves SSH
   tags = {
     Name = "DBInstance"
   }
