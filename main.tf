@@ -97,7 +97,8 @@ resource "aws_security_group" "web_app_instance_sg" {
   egress {
     from_port   = 0
     to_port     = 0
-    protocol    = var.all_protocols
+    protocol    = var.all_protocol
+
     cidr_blocks = [var.cidr_block_all_traffic]
   }
 }
@@ -232,20 +233,3 @@ output "firewall_name" {
   description = "AWS Network firewall"
 }
 */
-
-# Created resources outputs
-output "web_app_instance_public_ip_and_name" {
-  value = {
-    ip  = aws_instance.web_app_instance.public_ip
-    tag = aws_instance.web_app_instance.tags.Name
-  }
-  description = "Web App instance and public IP"
-}
-
-output "db_instance_private_ip_and_name" {
-  value = {
-    ip  = aws_instance.db_instance.private_ip
-    tag = aws_instance.db_instance.tags.Name
-  }
-  description = "DataBase instance and private IP"
-}
