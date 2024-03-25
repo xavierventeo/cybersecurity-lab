@@ -10,10 +10,28 @@ resource "aws_instance" "web_app_instance" {
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.web_app_instance_sg.id]
   key_name               = var.ssh_key_name # Claves SSH
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file("~/.ssh/lab_key_pair.pem")
+    host        = self.public_ip
+  }
+  provisioner "file" {
+    source      = "scripts/first-boot-web_app_instance.sh"
+    destination = "first-boot-web_app_instance.sh"
+  }
+  provisioner "remote-exec" {
+    inline = [
+      "chmod +x first-boot-web_app_instance.sh",
+      "./first-boot-web_app_instance.sh"
+    ]
+    when = create
+  }
   tags = {
     Name = "WebAppInstance"
   }
 }
+
 
 /*
 resource "aws_db_subnet_group" "db_private_subnet_group" {
