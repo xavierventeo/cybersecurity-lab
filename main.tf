@@ -4,6 +4,8 @@ provider "aws" {
 }
 
 # EC2 instances creation
+# Create a web application instance and learn how to install Apache using provisioners
+# TODO Move from provisioners to github actions
 resource "aws_instance" "web_app_instance" {
   ami                    = var.ami_ubuntu
   instance_type          = var.instance_type
@@ -11,9 +13,9 @@ resource "aws_instance" "web_app_instance" {
   vpc_security_group_ids = [aws_security_group.web_app_instance_sg.id]
   key_name               = var.ssh_key_name # Claves SSH
   connection {
-    type        = "ssh"
-    user        = "ubuntu"
-    private_key = file("~/.ssh/lab_key_pair.pem")
+    type        = var.ssh_protocol
+    user        = var.ubuntu_user
+    private_key = file(var.ssh_key_full_name)
     host        = self.public_ip
   }
   provisioner "file" {
@@ -31,7 +33,6 @@ resource "aws_instance" "web_app_instance" {
     Name = "WebAppInstance"
   }
 }
-
 
 /*
 resource "aws_db_subnet_group" "db_private_subnet_group" {

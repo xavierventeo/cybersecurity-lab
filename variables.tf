@@ -38,6 +38,11 @@ variable "tcp_protocol" {
   default = "tcp"
 }
 
+variable "ssh_protocol" {
+  type    = string
+  default = "ssh"
+}
+
 variable "all_protocols" {
   type    = string
   default = "-1"
@@ -67,4 +72,14 @@ variable "instance_type" {
 variable "ssh_key_name" {
   type    = string
   default = "lab_key_pair"
+}
+
+variable "ssh_key_full_name" {
+  type    = string
+  default = "~/.ssh/lab_key_pair.pem"
+}
+
+variable "ubuntu_user" {
+  type    = string
+  default = "ubuntu"
 }
