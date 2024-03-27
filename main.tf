@@ -4,31 +4,12 @@ provider "aws" {
 }
 
 # EC2 instances creation
-# Create a web application instance and learn how to install Apache using provisioners
-# TODO Move from provisioners to github actions
 resource "aws_instance" "web_app_instance" {
   ami                    = var.ami_ubuntu
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.web_app_instance_sg.id]
   key_name               = var.ssh_key_name # Claves SSH
-  connection {
-    type        = var.ssh_protocol
-    user        = var.ubuntu_user
-    private_key = file(var.ssh_key_full_name)
-    host        = self.public_ip
-  }
-  provisioner "file" {
-    source      = "scripts/first-boot-web_app_instance.sh"
-    destination = "first-boot-web_app_instance.sh"
-  }
-  provisioner "remote-exec" {
-    inline = [
-      "chmod +x first-boot-web_app_instance.sh",
-      "./first-boot-web_app_instance.sh"
-    ]
-    when = create
-  }
   tags = {
     Name = "WebAppInstance"
   }
