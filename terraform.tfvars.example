@@ -11,6 +11,7 @@ ssh_protocol               = "ssh"
 all_protocols              = "-1"
 http_port                  = 80
 ssh_port                   = 22
+mysql_port                 = 3306
 zero_port                  = 0
 allowed_ip_address         = "0.0.0.0/0" #Change for your own IP 
 ami_amazon_linux           = "ami-074254c177d57d640"

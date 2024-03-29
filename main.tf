@@ -39,6 +39,19 @@ resource "aws_db_instance" "db_instance" {
   db_subnet_group_name   = aws_db_subnet_group.db_private_subnet_group.name
   vpc_security_group_ids = [aws_security_group.rds.id]
 }
+
+
+# Create Security Group rds-ec2-lab
+# inbound rule del source del segurity group de la EC2
+# Type MYSQL/Aurora	
+# Protocol TCP
+# Description Rule to allow connections from EC2 instances with sg-02ac5e5cb04049239 attached
+# Port 3306
+#
+
+# Revie Security group ec2-reds-lab
+# lo mismo pero con outbound rule
+# Protocol TCP
 */
 
 # TODO Create SG enabling TCP and SSH 

@@ -60,6 +60,12 @@ variable "ssh_port" {
   default     = 22
 }
 
+variable "mysql_port" {
+  description = "MySQL port"
+  type        = number
+  default     = 3306
+}
+
 variable "zero_port" {
   description = "Port for allowed outbound traffic (default: 0)"
   default     = 0

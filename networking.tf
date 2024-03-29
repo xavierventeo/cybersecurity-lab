@@ -72,15 +72,15 @@ resource "aws_security_group" "web_app_instance_sg" {
   description = "Security group for EC2 instance"
   vpc_id      = aws_vpc.lab.id
 
-  # Regla de entrada para permitir el tráfico SSH desde la dirección IP permitida
+  # Inbound rule allows SSH traffic from allowed IP address
   ingress {
     from_port   = var.ssh_port
     to_port     = var.ssh_port
-    protocol    = var.tcp_protocol         #protocol expects a simple string
-    cidr_blocks = [var.allowed_ip_address] #cidr_blocks expects a list of strings
+    protocol    = var.tcp_protocol         # protocol expects a simple string
+    cidr_blocks = [var.allowed_ip_address] # cidr_blocks expects a list of strings
   }
 
-  # Regla de entrada para permitir el tráfico HTTP desde la dirección IP permitida
+  # Inbound rule allows HTTP traffic from allowed IP address
   ingress {
     from_port   = var.http_port
     to_port     = var.http_port
@@ -88,12 +88,43 @@ resource "aws_security_group" "web_app_instance_sg" {
     cidr_blocks = [var.allowed_ip_address]
   }
 
-  # Regla de salida para permitir todo el tráfico saliente
+  # Outbound rule allows all outbound traffic
   egress {
     from_port = var.zero_port
     to_port   = var.zero_port
     protocol  = var.all_protocols
 
     cidr_blocks = [var.cidr_block_all_traffic]
+  }
+}
+/*
+# SG for WebApp instance to allow acces to RDS
+resource "aws_security_group" "webapp_ec2_rds_sg" {
+  name        = "instance-security-group"
+  description = "Security group for EC2 to RDS"
+  vpc_id      = aws_vpc.lab.id
+
+  # Outbound rule allows HTTP traffic from allowed IP address
+  egress {
+    from_port   = var.mysql_port
+    to_port     = var.mysql_port
+    protocol    = var.tcp_protocol
+    security_groups = [aws_security_group.rds_webapp_ec2_sg.id]
+  }
+}
+*/
+# SG for RDS
+resource "aws_security_group" "rds_webapp_ec2_sg" {
+  name        = "rds-security-group"
+  description = "Security group for RDS to EC2 instance"
+  vpc_id      = aws_vpc.lab.id
+
+  # Inbound rule allows HTTP traffic from allowed IP address
+  ingress {
+    from_port   = var.mysql_port
+    to_port     = var.mysql_port
+    protocol    = var.tcp_protocol
+    security_groups = [aws_security_group.web_app_instance_sg.id]
+  #  cidr_blocks = ["${aws_security_group.webapp_ec2_rds_sg.id}"]
   }
 }
