@@ -8,6 +8,11 @@ variable "availability_zone" {
   default = "eu-west-1a"
 }
 
+variable "availability_zone_b" {
+  type    = string
+  default = "eu-west-1b"
+}
+
 variable "cidr_block_all_traffic" {
   type    = string
   default = "0.0.0.0/0"
@@ -28,9 +33,14 @@ variable "subnet_cidr_block_private" {
   default = "10.0.2.0/24"
 }
 
-variable "subnet_cidr_block_firewall" {
+variable "subnet_cidr_block_private_b" {
   type    = string
   default = "10.0.3.0/24"
+}
+
+variable "subnet_cidr_block_firewall" {
+  type    = string
+  default = "10.0.4.0/24"
 }
 
 variable "tcp_protocol" {

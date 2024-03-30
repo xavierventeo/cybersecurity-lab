@@ -7,10 +7,13 @@ output "web_app_instance_public_ip_and_name" {
   description = "Web App instance and public IP"
 }
 
-output "db_instance_private_ip_and_name" {
-  value = {
-    ip  = aws_instance.db_instance.private_ip
-    tag = aws_instance.db_instance.tags.Name
-  }
-  description = "DataBase instance and private IP"
+output "database_endpoint" {
+  description = "The endpoint of the database"
+  value       = aws_db_instance.db_instance.address
+}
+
+// This will output the database port
+output "database_port" {
+  description = "The port of the database"
+  value       = aws_db_instance.db_instance.port
 }

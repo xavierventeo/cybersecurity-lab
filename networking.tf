@@ -18,7 +18,7 @@ resource "aws_internet_gateway" "gw" {
 }
 
 # Route table to able flow connectivity throw Internet on public subnets
-resource "aws_route_table" "lab_rtb-public" {
+resource "aws_route_table" "lab_rt_public" {
   vpc_id = aws_vpc.lab.id
 
   route {
@@ -34,7 +34,20 @@ resource "aws_route_table" "lab_rtb-public" {
 # Associate route table to public subnet
 resource "aws_route_table_association" "public_subnet_asso" {
   subnet_id      = aws_subnet.public.id
-  route_table_id = aws_route_table.lab_rtb-public.id
+  route_table_id = aws_route_table.lab_rt_public.id
+}
+
+
+// Create a private route table
+resource "aws_route_table" "lab_rt_private" {
+  vpc_id = aws_vpc.lab.id
+  // Since this is going to be a private route table, 
+  // we will not be adding a route
+}
+
+resource "aws_route_table_association" "private" {
+  subnet_id      = aws_subnet.private.id
+  route_table_id = aws_route_table.lab_rt_private.id
 }
 
 # Subnets creation
@@ -48,6 +61,7 @@ resource "aws_subnet" "public" {
   }
 }
 
+# RDS is deployed on private subnets and requiere 2 subnets in different availability zones
 resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.lab.id
   cidr_block        = var.subnet_cidr_block_private
@@ -55,6 +69,22 @@ resource "aws_subnet" "private" {
   tags = {
     Name = "Private Subnet"
   }
+}
+resource "aws_subnet" "private_db" {
+  vpc_id            = aws_vpc.lab.id
+  cidr_block        = var.subnet_cidr_block_private_b
+  availability_zone = var.availability_zone_b
+  tags = {
+    Name = "Private Subnet AZ 2 for DB"
+  }
+}
+
+// Create a db subnet group named "tutorial_db_subnet_group"
+resource "aws_db_subnet_group" "database_subnet_group" {
+  name        = "lab_database_subnet_group"
+  description = "DB subnet group for the Lab"
+  
+  subnet_ids  = [aws_subnet.private.id, aws_subnet.private_db.id]
 }
 
 resource "aws_subnet" "firewall" {
@@ -97,34 +127,18 @@ resource "aws_security_group" "web_app_instance_sg" {
     cidr_blocks = [var.cidr_block_all_traffic]
   }
 }
-/*
-# SG for WebApp instance to allow acces to RDS
-resource "aws_security_group" "webapp_ec2_rds_sg" {
-  name        = "instance-security-group"
-  description = "Security group for EC2 to RDS"
-  vpc_id      = aws_vpc.lab.id
 
-  # Outbound rule allows HTTP traffic from allowed IP address
-  egress {
-    from_port   = var.mysql_port
-    to_port     = var.mysql_port
-    protocol    = var.tcp_protocol
-    security_groups = [aws_security_group.rds_webapp_ec2_sg.id]
-  }
-}
-*/
 # SG for RDS
-resource "aws_security_group" "rds_webapp_ec2_sg" {
+resource "aws_security_group" "database_sg" {
   name        = "rds-security-group"
   description = "Security group for RDS to EC2 instance"
   vpc_id      = aws_vpc.lab.id
 
-  # Inbound rule allows HTTP traffic from allowed IP address
+  # Inbound rule allows HTTP traffic from Web App EC2 Instance
   ingress {
-    from_port   = var.mysql_port
-    to_port     = var.mysql_port
-    protocol    = var.tcp_protocol
+    from_port       = var.mysql_port
+    to_port         = var.mysql_port
+    protocol        = var.tcp_protocol
     security_groups = [aws_security_group.web_app_instance_sg.id]
-  #  cidr_blocks = ["${aws_security_group.webapp_ec2_rds_sg.id}"]
   }
 }
