@@ -83,8 +83,8 @@ resource "aws_subnet" "private_db" {
 resource "aws_db_subnet_group" "database_subnet_group" {
   name        = "lab_database_subnet_group"
   description = "DB subnet group for the Lab"
-  
-  subnet_ids  = [aws_subnet.private.id, aws_subnet.private_db.id]
+
+  subnet_ids = [aws_subnet.private.id, aws_subnet.private_db.id]
 }
 
 resource "aws_subnet" "firewall" {
