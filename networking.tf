@@ -32,11 +32,10 @@ resource "aws_route_table" "lab_rt_public" {
 }
 
 # Associate route table to public subnet
-resource "aws_route_table_association" "public_subnet_asso" {
+resource "aws_route_table_association" "public_subnet_association" {
   subnet_id      = aws_subnet.public_subnet.id
   route_table_id = aws_route_table.lab_rt_public.id
 }
-
 
 // Create a private route table
 resource "aws_route_table" "lab_rt_private" {
@@ -45,13 +44,12 @@ resource "aws_route_table" "lab_rt_private" {
   // we will not be adding a route
 }
 
-resource "aws_route_table_association" "private" {
-#  subnet_id      = aws_subnet.private_subnet_a
+resource "aws_route_table_association" "private_rt_association" {
+  #  subnet_id      = aws_subnet.private_subnet_a
   route_table_id = aws_route_table.lab_rt_private.id
   count          = 2
 
-  subnet_id      = aws_subnet.private_subnet[count.index].id
-
+  subnet_id = aws_subnet.private_subnet[count.index].id
 }
 
 # Subnets creation
@@ -67,54 +65,24 @@ resource "aws_subnet" "public_subnet" {
 
 # RDS is deployed on private subnets and requiere 2 subnets in different availability zones
 resource "aws_subnet" "private_subnet" {
-  // count is the number of resources we want to create
-  // here we are referencing the subnet_count.private variable which
-  // current assigned to 2, so 2 private subnets will be created
+  // count is the number of subnets needed for RDS 
   count             = 2
   vpc_id            = aws_vpc.lab.id
-
-  // We are grabbing a CIDR block from the "private_subnet_cidr_blocks" variable
-  // since it is a list, we need to grab the element based on count,
-  // since count is 2, the first subnet will grab the CIDR block 10.0.101.0/24
-  // and the second subnet will grab the CIDR block 10.0.102.0/24
   cidr_block        = var.subnet_cidr_blocks_private[count.index]
   availability_zone = data.aws_availability_zones.available.names[count.index]
 
-  // We are tagging the subnet with a name of "tutorial_private_subnet_" and
-  // suffixed with the count
   tags = {
-    Name = "private_subnet${count.index}"
+    Name = "private_subnet_${count.index}"
   }
 }
 
-/*
-resource "aws_subnet" "private_subnet_a" {
-  vpc_id            = aws_vpc.lab.id
-  cidr_block        = var.subnet_cidr_block_private
-  availability_zone = var.availability_zone
-  tags = {
-    Name = "Private Subnet"
-  }
-}
-resource "aws_subnet" "private_subnet_b" {
-  vpc_id            = aws_vpc.lab.id
-  cidr_block        = var.subnet_cidr_block_private_b
-  availability_zone = var.availability_zone_b
-  tags = {
-    Name = "Private Subnet AZ 2 for DB"
-  }
-}
-*/
 // Create a db subnet group named "tutorial_db_subnet_group"
 resource "aws_db_subnet_group" "database_subnet_group" {
   name        = "lab_database_subnet_group"
   description = "DB subnet group for the Lab"
-
-  #subnet_ids = [aws_subnet.private.id]
-  #  subnet_ids = [aws_subnet.private.id, aws_subnet.private_db.id]
   subnet_ids  = [for subnet in aws_subnet.private_subnet : subnet.id]
 }
-
+/*
 resource "aws_subnet" "firewall_subnet" {
   vpc_id            = aws_vpc.lab.id
   cidr_block        = var.subnet_cidr_block_firewall
@@ -123,7 +91,7 @@ resource "aws_subnet" "firewall_subnet" {
     Name = "firewall"
   }
 }
-
+*/
 # SG for instances with public access
 resource "aws_security_group" "web_app_instance_sg" {
   name        = "instance-security-group"

@@ -38,18 +38,6 @@ resource "aws_db_instance" "db_instance" {
   db_subnet_group_name   = aws_db_subnet_group.database_subnet_group.name
   vpc_security_group_ids = [aws_security_group.database_sg.id]
   tags = {
-    Name = "labdatabase"
+    Name = "Lab Database"
   }
 }
-
-/*
-resource "aws_instance" "db_instance" {
-  ami           = var.ami_amazon_linux
-  instance_type = var.instance_type
-  subnet_id     = aws_subnet.private.id
-  key_name      = var.ssh_key_name # Claves SSH
-  tags = {
-    Name = "DBInstance"
-  }
-}
-*/
