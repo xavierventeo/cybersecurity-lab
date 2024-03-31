@@ -3,16 +3,6 @@ variable "region" {
   default = "eu-west-1"
 }
 
-variable "availability_zone" {
-  type    = string
-  default = "eu-west-1a"
-}
-
-variable "availability_zone_b" {
-  type    = string
-  default = "eu-west-1b"
-}
-
 variable "cidr_block_all_traffic" {
   type    = string
   default = "0.0.0.0/0"
@@ -36,17 +26,12 @@ variable "subnet_cidr_blocks_private" {
     "10.0.3.0/24",
   ]
 }
-/*
-variable "subnet_cidr_block_private" {
-  type    = string
-  default = "10.0.2.0/24"
+
+variable "num_rds_private_subnets" {
+  type    = number
+  default = 2
 }
 
-variable "subnet_cidr_block_private_b" {
-  type    = string
-  default = "10.0.3.0/24"
-}
-*/
 variable "subnet_cidr_block_firewall" {
   type    = string
   default = "10.0.4.0/24"
@@ -124,4 +109,28 @@ variable "ssh_key_full_name" {
 variable "ubuntu_user" {
   type    = string
   default = "ubuntu"
+}
+
+variable "aws_availability_zones" {
+  type    = string
+  default = "available"
+}
+
+variable "database_settings" {
+  description = "Database configuration settings"
+  type        = map(any)
+  default = {
+    "mysql" = {
+      allocated_storage   = 10
+      engine              = "mysql"
+      engine_version      = "5.7"
+      instance_class      = "db.t3.micro"
+      db_name             = "labdatabase"
+      username            = "admin"
+      password            = "password" #Change by a proper value at terraform.tfvars
+      multi_az            = false
+      apply_immediately   = true
+      skip_final_snapshot = true
+    }
+  }
 }

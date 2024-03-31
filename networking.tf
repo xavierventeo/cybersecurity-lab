@@ -37,17 +37,20 @@ resource "aws_route_table_association" "public_subnet_association" {
   route_table_id = aws_route_table.lab_rt_public.id
 }
 
-// Create a private route table
+# Create a private route table
 resource "aws_route_table" "lab_rt_private" {
   vpc_id = aws_vpc.lab.id
-  // Since this is going to be a private route table, 
-  // we will not be adding a route
+  # Since this is going to be a private route table, 
+  # we will not be adding a route
+  tags = {
+    Name = "Private Lab Route Table"
+  }
 }
 
 resource "aws_route_table_association" "private_rt_association" {
   #  subnet_id      = aws_subnet.private_subnet_a
   route_table_id = aws_route_table.lab_rt_private.id
-  count          = 2
+  count          = var.num_rds_private_subnets
 
   subnet_id = aws_subnet.private_subnet[count.index].id
 }
@@ -56,7 +59,7 @@ resource "aws_route_table_association" "private_rt_association" {
 resource "aws_subnet" "public_subnet" {
   vpc_id                  = aws_vpc.lab.id
   cidr_block              = var.subnet_cidr_block_public
-  availability_zone       = var.availability_zone
+  availability_zone       = data.aws_availability_zones.available.names[1]
   map_public_ip_on_launch = true # Enable automatic public IP assign
   tags = {
     Name = "Public Subnet"
@@ -65,7 +68,7 @@ resource "aws_subnet" "public_subnet" {
 
 # RDS is deployed on private subnets and requiere 2 subnets in different availability zones
 resource "aws_subnet" "private_subnet" {
-  // count is the number of subnets needed for RDS 
+  # count is the number of subnets needed for RDS 
   count             = 2
   vpc_id            = aws_vpc.lab.id
   cidr_block        = var.subnet_cidr_blocks_private[count.index]
@@ -76,7 +79,7 @@ resource "aws_subnet" "private_subnet" {
   }
 }
 
-// Create a db subnet group named "tutorial_db_subnet_group"
+# Create a db subnet group named "tutorial_db_subnet_group"
 resource "aws_db_subnet_group" "database_subnet_group" {
   name        = "lab_database_subnet_group"
   description = "DB subnet group for the Lab"

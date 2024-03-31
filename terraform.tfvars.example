@@ -1,12 +1,11 @@
 # After clone, copy this file as terraform.tfvars add modify variables with your values
 region                       = "eu-west-1" # Europe (Ireland)
-availability_zone            = "eu-west-1a"
-availability_zone_b          = "eu-west-1b"
 cidr_block_all_traffic       = "0.0.0.0/0"
 vpc_cidr_block               = "10.0.0.0/16"
 subnet_cidr_block_public     = "10.0.1.0/24"
-subnet_cidr_block_private    = "10.0.2.0/24"
-subnet_cidr_block_private_b  = "10.0.3.0/24"
+#subnet_cidr_block_private_1 = "10.0.2.0/24"
+#subnet_cidr_block_private_2 = "10.0.3.0/24"
+num_rds_private_subnets      = 2
 subnet_cidr_block_firewall   = "10.0.3.0/24"
 tcp_protocol                 = "tcp"
 ssh_protocol                 = "ssh"
@@ -22,3 +21,18 @@ instance_type                = "t2.micro"  #Free Tier
 ssh_key_name                 = "lab_key_pair"
 ssh_key_full_name            = "~/.ssh/lab_key_pair.pem"
 tcp_protocol                 = "tcp"
+aws_availability_zones       = "available"
+database_settings = {
+  mysql = {
+    allocated_storage   = 10
+    engine              = "mysql"
+    engine_version      = "5.7"
+    instance_class      = "db.t3.micro"
+    db_name             = "labdatabase"
+    username            = "admin"
+    password            = "password"
+    multi_az            = false
+    apply_immediately   = true
+    skip_final_snapshot = true
+  }
+}
