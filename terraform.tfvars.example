@@ -17,6 +17,7 @@ zero_port                    = 0
 allowed_ip_address           = "0.0.0.0/0" #Change for your own IP 
 ami_amazon_linux             = "ami-074254c177d57d640"
 ami_ubuntu                   = "ami-0c1c30571d2dae5c9"
+ami_windows_server_2016      = "ami-0d9799c654b4dcb1d"
 instance_type                = "t2.micro"  #Free Tier
 ssh_key_name                 = "lab_key_pair"
 ssh_key_full_name            = "~/.ssh/lab_key_pair.pem"

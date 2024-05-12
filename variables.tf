@@ -91,6 +91,11 @@ variable "ami_ubuntu" {
   default = "ami-0c1c30571d2dae5c9"
 }
 
+variable "ami_windows_server_2016" {
+  type    = string
+  default = "ami-0d9799c654b4dcb1d"
+}
+
 variable "instance_type" {
   type    = string
   default = "t2.micro"
