@@ -1,81 +1,88 @@
-/*
-# AWS Network Firewall to control traffic between the web application on the public subnet and the database on the private subnet
-
-# Firewall stateful rule group to allow traffic for the database
-resource "aws_networkfirewall_rule_group" "stateful_rule_allow_db" {
-  type     = "STATEFUL"
-  name     = "AllowWebToDBTraffic"
+# AWS Network Firewall 
+# Stateful rule to monitor all 443 traffic by session
+resource "aws_networkfirewall_rule_group" "stateful_rule_group" {
+  name     = "stateful-rule-group"
   capacity = 100
+  type     = "STATEFUL" 
 
   rule_group {
-    rule_variables {
-      ip_sets {
-        key = "WEBAPP_INSTANCE"
-        ip_set {
-          definition = ["10.0.1.0/24"]
-        }
-      }
-      ip_sets {
-        key = "DB_INSTANCE"
-        ip_set {
-          definition = ["10.0.2.0/24"]
-        }
-      }
-      port_sets {
-        key = "DB_PORTS"
-        port_set {
-          definition = ["3306", "443", "80"]
-        }
-      }
-    }
     rules_source {
       stateful_rule {
-        action = "PASS"
+        action = "ALERT" # Alert instead of drop traffic
         header {
-          destination      = "$WEBAPP_INSTANCE"
-          destination_port = "$DB_PORTS"
-          protocol         = "TCP"
+          source           = "0.0.0.0/0"
+          destination      = "0.0.0.0/0"   # All addresses in internal network
+          protocol         = "TCP"         
+          source_port      = 443           # HTTPS Port
+          destination_port = 443           
           direction        = "FORWARD"
-          source_port      = "ANY"
-          source           = "$DB_INSTANCE"
         }
         rule_option {
-          keyword = "sid:1"
+          keyword = "sid:100"
         }
       }
     }
   }
 }
 
-# Firewall policy creation attaching the previous rules group
-resource "aws_networkfirewall_firewall_policy" "internal_firewall_policy" {
-  name        = "InternalFirewallPolicy"
-  description = "Policy for the internal network firewall"
+# Stateless rule to monitor all SSL traffic
+resource "aws_networkfirewall_rule_group" "stateless_rule_group" {
+  name     = "stateless-rule-group"
+  capacity = 100
+  type     = "STATELESS" 
 
+  rule_group {
+    rules_source {
+      stateless_rules_and_custom_actions {
+        stateless_rule {
+          priority = 1
+          rule_definition {
+            actions = ["aws:pass"]
+            match_attributes {
+              protocols = [6]       # TCP Protocol
+              destination_port {
+                from_port = 22
+                to_port   = 22
+              }
+              source {
+                address_definition = "0.0.0.0/0"
+              }
+              destination {
+                address_definition = "0.0.0.0/0"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Firewall policy attaching rule stateless and statefull defined
+resource "aws_networkfirewall_firewall_policy" "lab_firewall_policy" {
+  name = "lab-firewall-policy"
   firewall_policy {
-    stateless_default_actions          = ["aws:drop"]
-    stateless_fragment_default_actions = ["aws:drop"]
+    stateless_default_actions          = ["aws:pass"]
+    stateless_fragment_default_actions = ["aws:pass"]
+
     stateful_rule_group_reference {
-      resource_arn = aws_networkfirewall_rule_group.stateful_rule_allow_db.arn
+      resource_arn = aws_networkfirewall_rule_group.stateful_rule_group.arn
+    }
+
+    stateless_rule_group_reference {
+      resource_arn = aws_networkfirewall_rule_group.stateless_rule_group.arn
+      priority     = 1
     }
   }
 }
 
 # AWS Network Firewall creation attached to the VPC and firewall subnet. Previous policy attached
-resource "aws_networkfirewall_firewall" "internal_firewall" {
-  name                = "InternalFirewall"
-  firewall_policy_arn = aws_networkfirewall_firewall_policy.internal_firewall_policy.arn
+resource "aws_networkfirewall_firewall" "lab_firewall" {
+  name                = "lab-firewall"
+  firewall_policy_arn = aws_networkfirewall_firewall_policy.lab_firewall_policy.arn
   vpc_id              = aws_vpc.lab.id
 
   subnet_mapping {
-    subnet_id = aws_subnet.firewall.id
+    subnet_id = aws_subnet.firewall_subnet.id
   }
 }
-
-output "firewall_name" {
-  value = {
-    name = aws_networkfirewall_firewall.internal_firewall.name
-  }
-  description = "AWS Network firewall"
-}
-*/

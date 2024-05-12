@@ -66,6 +66,15 @@ resource "aws_subnet" "public_subnet" {
   }
 }
 
+resource "aws_subnet" "firewall_subnet" {
+  vpc_id            = aws_vpc.lab.id
+  cidr_block        = var.subnet_cidr_block_firewall
+  availability_zone = data.aws_availability_zones.available.names[1]
+  tags = {
+    Name = "Firewall Subnet"
+  }
+}
+
 # RDS is deployed on private subnets and requiere 2 subnets in different availability zones
 resource "aws_subnet" "private_subnet" {
   # count is the number of subnets needed for RDS 
@@ -75,26 +84,17 @@ resource "aws_subnet" "private_subnet" {
   availability_zone = data.aws_availability_zones.available.names[count.index]
 
   tags = {
-    Name = "private_subnet_${count.index}"
+    Name = "Private Subnet ${count.index}"
   }
 }
 
-# Create a db subnet group named "tutorial_db_subnet_group"
+# Create a db subnet group named "lab_database_subnet_group"
 resource "aws_db_subnet_group" "database_subnet_group" {
   name        = "lab_database_subnet_group"
   description = "DB subnet group for the Lab"
   subnet_ids  = [for subnet in aws_subnet.private_subnet : subnet.id]
 }
-/*
-resource "aws_subnet" "firewall_subnet" {
-  vpc_id            = aws_vpc.lab.id
-  cidr_block        = var.subnet_cidr_block_firewall
-  availability_zone = var.availability_zone
-  tags = {
-    Name = "firewall"
-  }
-}
-*/
+
 # SG for instances with public access
 resource "aws_security_group" "web_app_instance_sg" {
   name        = "instance-security-group"
