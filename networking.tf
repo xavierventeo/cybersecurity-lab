@@ -97,8 +97,8 @@ resource "aws_db_subnet_group" "database_subnet_group" {
 
 # SG for instances with public access
 resource "aws_security_group" "web_app_instance_sg" {
-  name        = "instance-security-group"
-  description = "Security group for EC2 instance"
+  name        = "webapp-instance-security-group"
+  description = "Security group for WebApp EC2 instance"
   vpc_id      = aws_vpc.lab.id
 
   # Inbound rule allows SSH traffic from allowed IP address
@@ -115,6 +115,30 @@ resource "aws_security_group" "web_app_instance_sg" {
     to_port     = var.http_port
     protocol    = var.tcp_protocol
     cidr_blocks = [var.allowed_ip_address]
+  }
+
+  # Outbound rule allows all outbound traffic
+  egress {
+    from_port = var.zero_port
+    to_port   = var.zero_port
+    protocol  = var.all_protocols
+
+    cidr_blocks = [var.cidr_block_all_traffic]
+  }
+}
+
+# SG for instances with public access
+resource "aws_security_group" "public_instances_sg" {
+  name        = "instance-security-group"
+  description = "Security group for Public EC2 instance"
+  vpc_id      = aws_vpc.lab.id
+
+  # Inbound rule allows all traffic from allowed IP address
+  ingress {
+    from_port = var.zero_port
+    to_port   = var.zero_port
+    protocol  = var.all_protocols          
+    cidr_blocks = [var.allowed_ip_address] # cidr_blocks expects a list of strings
   }
 
   # Outbound rule allows all outbound traffic
