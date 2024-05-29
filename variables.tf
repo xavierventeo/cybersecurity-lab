@@ -139,3 +139,33 @@ variable "database_settings" {
     }
   }
 }
+
+variable "db_parameter_group_family" {
+  description = "DB parameter group family"
+  type        = string
+  default     = "mysql5.7"
+}
+
+variable "db_option_group_engine_name" {
+  description = "Engine name for the RDS DB option group"
+  type        = string
+  default     = "mysql"
+}
+
+variable "db_option_group_engine_version" {
+  description = "Major engine version for the RDS DB option group"
+  type        = string
+  default     = "5.7"
+}
+
+variable "db_option_group_description" {
+  description = "Description of the RDS DB option group"
+  type        = string
+  default     = "Option group for enabling MariaDB audit plugin"
+}
+
+variable "mariadb_audit_plugin_events" {
+  description = "Events to be logged by the MariaDB audit plugin"
+  type        = string
+  default     = "CONNECT,QUERY,QUERY_DDL,QUERY_DML,QUERY_DML_NO_SELECT,QUERY_DCL"
+}

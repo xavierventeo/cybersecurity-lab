@@ -1,14 +1,14 @@
 # Create an RDS parameter group to enable CloudWatch logging
+# Create an RDS parameter group to enable CloudWatch logging
 resource "aws_db_parameter_group" "lab_db_parameter_group" {
   name        = "lab-db-parameter-group"
-  family      = "mysql5.7"
   description = "Custom parameter group for RDS MySQL with CloudWatch logging"
+  family      = var.db_parameter_group_family
 
   parameter {
     name  = "slow_query_log"
     value = "1"
   }
-  #slow_query_log = 1 or log_slow_query = 1
 
   parameter {
     name  = "general_log"
@@ -21,27 +21,25 @@ resource "aws_db_parameter_group" "lab_db_parameter_group" {
   }
 }
 
-#Create an option group to enable the MariaDB audit plugin
+# Create an option group to enable the MariaDB audit plugin
 resource "aws_db_option_group" "lab_db_option_group" {
   name                     = "lab-db-option-group"
-  engine_name              = "mysql"
-#  major_engine_version     = "8.0"
-  major_engine_version     = "5.7"
-
-  option_group_description = "Option group for enabling MariaDB audit plugin"
+  engine_name              = var.db_option_group_engine_name
+  major_engine_version     = var.db_option_group_engine_version
+  option_group_description = var.db_option_group_description
 
   option {
     option_name = "MARIADB_AUDIT_PLUGIN"
     option_settings {
       name  = "SERVER_AUDIT_EVENTS"
-      value = "CONNECT,QUERY,QUERY_DDL,QUERY_DML,QUERY_DML_NO_SELECT,QUERY_DCL"
+      value = var.mariadb_audit_plugin_events
     }
   }
+
   tags = {
     Name = "lab_db_option_group"
   }
 }
-
 
 
 # RDS Instance creation
