@@ -3,7 +3,7 @@
 resource "aws_networkfirewall_rule_group" "stateful_rule_group" {
   name     = "stateful-rule-group"
   capacity = 100
-  type     = "STATEFUL" 
+  type     = "STATEFUL"
 
   rule_group {
     rules_source {
@@ -11,10 +11,10 @@ resource "aws_networkfirewall_rule_group" "stateful_rule_group" {
         action = "ALERT" # Alert instead of drop traffic
         header {
           source           = "0.0.0.0/0"
-          destination      = "0.0.0.0/0"   # All addresses in internal network
-          protocol         = "TCP"         
-          source_port      = 443           # HTTPS Port
-          destination_port = 443           
+          destination      = "0.0.0.0/0" # All addresses in internal network
+          protocol         = "TCP"
+          source_port      = 443 # HTTPS Port
+          destination_port = 443
           direction        = "FORWARD"
         }
         rule_option {
@@ -29,7 +29,7 @@ resource "aws_networkfirewall_rule_group" "stateful_rule_group" {
 resource "aws_networkfirewall_rule_group" "stateless_rule_group" {
   name     = "stateless-rule-group"
   capacity = 100
-  type     = "STATELESS" 
+  type     = "STATELESS"
 
   rule_group {
     rules_source {
@@ -39,7 +39,7 @@ resource "aws_networkfirewall_rule_group" "stateless_rule_group" {
           rule_definition {
             actions = ["aws:pass"]
             match_attributes {
-              protocols = [6]       # TCP Protocol
+              protocols = [6] # TCP Protocol
               destination_port {
                 from_port = 22
                 to_port   = 22

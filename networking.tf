@@ -135,9 +135,9 @@ resource "aws_security_group" "public_instances_sg" {
 
   # Inbound rule allows all traffic from allowed IP address
   ingress {
-    from_port = var.zero_port
-    to_port   = var.zero_port
-    protocol  = var.all_protocols          
+    from_port   = var.zero_port
+    to_port     = var.zero_port
+    protocol    = var.all_protocols
     cidr_blocks = [var.allowed_ip_address] # cidr_blocks expects a list of strings
   }
 
