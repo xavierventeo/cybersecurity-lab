@@ -86,3 +86,136 @@ resource "aws_networkfirewall_firewall" "lab_firewall" {
     subnet_id = aws_subnet.firewall_subnet.id
   }
 }
+
+# Create a CloudWatch Log Group
+resource "aws_cloudwatch_log_group" "network_firewall_log_group" {
+  name              = "/aws/network_firewall/logs"
+  retention_in_days = 30
+}
+
+# Create Network Firewall Logging Configuration
+resource "aws_networkfirewall_logging_configuration" "network_firewall_log_configuration" {
+  firewall_arn = aws_networkfirewall_firewall.lab_firewall.arn
+
+  logging_configuration {
+    log_destination_config {
+      log_destination = {
+        logGroup = aws_cloudwatch_log_group.network_firewall_log_group.name
+      }
+      log_destination_type = "CloudWatchLogs"
+      log_type             = "ALERT"
+    }
+
+    log_destination_config {
+      log_destination = {
+        logGroup = aws_cloudwatch_log_group.network_firewall_log_group.name
+      }
+      log_destination_type = "CloudWatchLogs"
+      log_type             = "FLOW"
+    }
+  }
+}
+
+
+###########################
+/*
+resource "aws_iam_role" "log_delivery_role" {
+  name = "AWSLogDeliveryRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "delivery.logs.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "log_delivery_policy" {
+  name        = "AWSLogDeliveryWritePolicy"
+  description = "Policy to allow AWS log delivery to write to CloudWatch Logs"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AWSLogDeliveryWrite20150319"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = [
+          "arn:aws:logs:eu-west-1:762501385471:log-group:network_firewall_log_group:log-stream:*"
+        ]
+        Condition = {
+          StringEquals = {
+            "aws:SourceAccount" = "762501385471"
+          }
+          ArnLike = {
+            "aws:SourceArn" = "arn:aws:logs:eu-west-1:762501385471:*"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "log_delivery_policy_attachment" {
+  role       = aws_iam_role.log_delivery_role.name
+  policy_arn = aws_iam_policy.log_delivery_policy.arn
+}
+
+*/
+#############################
+
+
+
+
+
+/*
+# Create IAM Role for Network Firewall Logging
+resource "aws_iam_role" "firewall_logging_role" {
+  name = "NetworkFirewallLoggingRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "network-firewall.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "firewall_logging_policy" {
+  name = "NetworkFirewallLoggingPolicy"
+  role = aws_iam_role.firewall_logging_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Sid    = "FirewallLogging"
+        Action = [
+          "logs:CreateLogDelivery",
+          "logs:GetLogDelivery",
+          "logs:UpdateLogDelivery",
+          "logs:DeleteLogDelivery",
+          "logs:ListLogDeliveries"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+*/

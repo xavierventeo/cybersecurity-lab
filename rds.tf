@@ -1,5 +1,4 @@
 # Create an RDS parameter group to enable CloudWatch logging
-# Create an RDS parameter group to enable CloudWatch logging
 resource "aws_db_parameter_group" "lab_db_parameter_group" {
   name        = "lab-db-parameter-group"
   description = "Custom parameter group for RDS MySQL with CloudWatch logging"
