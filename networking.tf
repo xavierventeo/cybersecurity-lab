@@ -17,44 +17,6 @@ resource "aws_internet_gateway" "gw" {
   }
 }
 
-# Route table to able flow connectivity throw Internet on public subnets
-resource "aws_route_table" "lab_rt_public" {
-  vpc_id = aws_vpc.lab.id
-
-  route {
-    cidr_block = var.cidr_block_all_traffic
-    gateway_id = aws_internet_gateway.gw.id
-  }
-
-  tags = {
-    Name = "Public Lab Route Table"
-  }
-}
-
-# Associate route table to public subnet
-resource "aws_route_table_association" "public_subnet_association" {
-  subnet_id      = aws_subnet.public_subnet.id
-  route_table_id = aws_route_table.lab_rt_public.id
-}
-
-# Create a private route table
-resource "aws_route_table" "lab_rt_private" {
-  vpc_id = aws_vpc.lab.id
-  # Since this is going to be a private route table, 
-  # we will not be adding a route
-  tags = {
-    Name = "Private Lab Route Table"
-  }
-}
-
-resource "aws_route_table_association" "private_rt_association" {
-  #  subnet_id      = aws_subnet.private_subnet_a
-  route_table_id = aws_route_table.lab_rt_private.id
-  count          = var.num_rds_private_subnets
-
-  subnet_id = aws_subnet.private_subnet[count.index].id
-}
-
 # Subnets creation
 resource "aws_subnet" "public_subnet" {
   vpc_id                  = aws_vpc.lab.id
@@ -87,6 +49,113 @@ resource "aws_subnet" "private_subnet" {
     Name = "Private Subnet ${count.index}"
   }
 }
+
+###################################
+#vpc_cidr_block "10.0.0.0/16"
+#cidr_block_all_traffic  "0.0.0.0/0"
+#subnet_cidr_block_public "10.0.1.0/24"
+#subnet_cidr_blocks_private
+#    "10.0.2.0/24",
+#    "10.0.3.0/24",
+#subnet_cidr_block_firewall "10.0.4.0/24"
+
+
+# Route tables block: First it have to get the firewall endpoint
+data "aws_vpc_endpoint" "lab_firewall_endpoint" {
+  vpc_id = aws_vpc.lab.id
+
+  tags = {
+    "AWSNetworkFirewallManaged" = "true"
+    "Firewall"                  = aws_networkfirewall_firewall.lab_firewall.arn
+  }
+
+  depends_on = [aws_networkfirewall_firewall.lab_firewall]
+}
+
+
+# Route table Internet Gateway
+# Routes traffic that's destined for the public subnet to the firewall subnet. 
+# The customer subnet shows the private IP address range behind the publicly assigned address. 
+# The subnet has public addresses assigned, which are either auto-generated or assigned via Elastic IP address. 
+# Within a VPC, only private IP addresses are used for communication.
+
+resource "aws_route_table" "lab_rt_internet_gateway" {
+  vpc_id = aws_vpc.lab.id
+
+  route {
+    cidr_block      = var.subnet_cidr_block_public
+    vpc_endpoint_id = data.aws_vpc_endpoint.lab_firewall_endpoint.id
+  }
+
+  tags = {
+    Name = "Internet Gateway Lab Route Table"
+  }
+}
+
+# Route table Firewall to able flow connectivity throw Internet on public subnets
+# Routes traffic that's destined for anywhere inside the Lab VPC  to the local address. 
+# Routes traffic that's destined for anywhere else (0.0.0.0/0) to the internet gateway.
+resource "aws_route_table" "lab_rt_firewall" {
+  vpc_id = aws_vpc.lab.id
+
+  route {
+    cidr_block = var.cidr_block_all_traffic
+    gateway_id = aws_internet_gateway.gw.id
+  }
+
+  tags = {
+    Name = "Firewall Lab Route Table"
+  }
+}
+
+# Associate route table to firewall subnet
+resource "aws_route_table_association" "firewall_subnet_association" {
+  subnet_id      = aws_subnet.firewall_subnet.id
+  route_table_id = aws_route_table.lab_rt_firewall.id
+}
+
+# Route table to able flow connectivity throw Internet on public subnets
+# Routes traffic that's destined for anywhere inside the Lab VPC to the local address. 
+# Routes traffic that's destined for anywhere else (0.0.0.0/0) to the firewall subnet.
+# Before the firewall inclusion, the customer subnet route table routed the 0.0.0.0/0 traffic to Internet Gateway.
+resource "aws_route_table" "lab_rt_protected" {
+  vpc_id = aws_vpc.lab.id
+
+  route {
+    cidr_block      = var.cidr_block_all_traffic
+    vpc_endpoint_id = data.aws_vpc_endpoint.lab_firewall_endpoint.id
+    #gateway_id = aws_internet_gateway.gw.id
+  }
+
+  tags = {
+    Name = "Protected Lab Route Table"
+  }
+}
+
+# Associate route table to public subnet
+resource "aws_route_table_association" "protected_subnet_association" {
+  subnet_id      = aws_subnet.public_subnet.id
+  route_table_id = aws_route_table.lab_rt_protected.id
+}
+
+# Create a private route table
+resource "aws_route_table" "lab_rt_private" {
+  vpc_id = aws_vpc.lab.id
+  # Since this is going to be a private route table, 
+  # we will not be adding a route
+  tags = {
+    Name = "Private Lab Route Table"
+  }
+}
+
+resource "aws_route_table_association" "private_rt_association" {
+  route_table_id = aws_route_table.lab_rt_private.id
+  count          = var.num_rds_private_subnets
+
+  subnet_id = aws_subnet.private_subnet[count.index].id
+}
+
+##################################
 
 # Create a db subnet group named "lab_database_subnet_group"
 resource "aws_db_subnet_group" "database_subnet_group" {
