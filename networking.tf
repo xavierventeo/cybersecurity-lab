@@ -18,13 +18,13 @@ resource "aws_internet_gateway" "gw" {
 }
 
 # Subnets creation
-resource "aws_subnet" "public_subnet" {
+resource "aws_subnet" "protected_subnet" {
   vpc_id                  = aws_vpc.lab.id
-  cidr_block              = var.subnet_cidr_block_public
+  cidr_block              = var.subnet_cidr_block_protected
   availability_zone       = data.aws_availability_zones.available.names[1]
   map_public_ip_on_launch = true # Enable automatic public IP assign
   tags = {
-    Name = "Public Subnet"
+    Name = "Protected Subnet"
   }
 }
 
@@ -53,7 +53,7 @@ resource "aws_subnet" "private_subnet" {
 ###################################
 #vpc_cidr_block "10.0.0.0/16"
 #cidr_block_all_traffic  "0.0.0.0/0"
-#subnet_cidr_block_public "10.0.1.0/24"
+#subnet_cidr_block_protected "10.0.1.0/24"
 #subnet_cidr_blocks_private
 #    "10.0.2.0/24",
 #    "10.0.3.0/24",
@@ -73,7 +73,7 @@ data "aws_vpc_endpoint" "lab_firewall_endpoint" {
 }
 
 # Route table Internet Gateway
-# Routes traffic that's destined for the public subnet to the firewall subnet. 
+# Routes traffic that's destined for the protected subnet to the firewall subnet. 
 # The customer subnet shows the private IP address range behind the publicly assigned address. 
 # The subnet has public addresses assigned, which are either auto-generated or assigned via Elastic IP address. 
 # Within a VPC, only private IP addresses are used for communication.
@@ -82,7 +82,7 @@ resource "aws_route_table" "lab_rt_internet_gateway" {
   vpc_id = aws_vpc.lab.id
 
   route {
-    cidr_block      = var.subnet_cidr_block_public
+    cidr_block      = var.subnet_cidr_block_protected
     vpc_endpoint_id = data.aws_vpc_endpoint.lab_firewall_endpoint.id
   }
 
@@ -92,12 +92,12 @@ resource "aws_route_table" "lab_rt_internet_gateway" {
 }
 
 # Requieres explicit edge association
-resource "aws_route_table_association" "public_subnet_association" {
+resource "aws_route_table_association" "internet_gateway_edge_association" {
   gateway_id     = aws_internet_gateway.gw.id
   route_table_id = aws_route_table.lab_rt_internet_gateway.id
 }
 
-# Route table Firewall to able flow connectivity throw Internet on public subnets
+# Route table Firewall to able flow connectivity throw Internet on protected subnets
 # Routes traffic that's destined for anywhere inside the Lab VPC  to the local address. 
 # Routes traffic that's destined for anywhere else (0.0.0.0/0) to the internet gateway.
 resource "aws_route_table" "lab_rt_firewall" {
@@ -119,7 +119,7 @@ resource "aws_route_table_association" "firewall_subnet_association" {
   route_table_id = aws_route_table.lab_rt_firewall.id
 }
 
-# Route table to able flow connectivity throw Internet on public subnets
+# Route table to able flow connectivity throw Internet on protected subnets
 # Routes traffic that's destined for anywhere inside the Lab VPC to the local address. 
 # Routes traffic that's destined for anywhere else (0.0.0.0/0) to the firewall subnet.
 # Before the firewall inclusion, the customer subnet route table routed the 0.0.0.0/0 traffic to Internet Gateway.
@@ -136,9 +136,9 @@ resource "aws_route_table" "lab_rt_protected" {
   }
 }
 
-# Associate route table to public subnet
+# Associate route table to protected subnet
 resource "aws_route_table_association" "protected_subnet_association" {
-  subnet_id      = aws_subnet.public_subnet.id
+  subnet_id      = aws_subnet.protected_subnet.id
   route_table_id = aws_route_table.lab_rt_protected.id
 }
 
@@ -168,7 +168,7 @@ resource "aws_db_subnet_group" "database_subnet_group" {
   subnet_ids  = [for subnet in aws_subnet.private_subnet : subnet.id]
 }
 
-# SG for instances with public access
+# SG for instances with protected access
 resource "aws_security_group" "web_app_instance_sg" {
   name        = "webapp-instance-security-group"
   description = "Security group for WebApp EC2 instance"
@@ -200,10 +200,10 @@ resource "aws_security_group" "web_app_instance_sg" {
   }
 }
 
-# SG for instances with public access
-resource "aws_security_group" "public_instances_sg" {
+# SG for instances with protected access
+resource "aws_security_group" "protected_instances_sg" {
   name        = "instance-security-group"
-  description = "Security group for Public EC2 instance"
+  description = "Security group for Protected EC2 instance"
   vpc_id      = aws_vpc.lab.id
 
   # Inbound rule allows all traffic from allowed IP address

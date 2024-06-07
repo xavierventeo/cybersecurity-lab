@@ -2,7 +2,7 @@
 region                       = "eu-west-1" # Europe (Ireland)
 cidr_block_all_traffic       = "0.0.0.0/0"
 vpc_cidr_block               = "10.0.0.0/16"
-subnet_cidr_block_public     = "10.0.1.0/24"
+subnet_cidr_block_protected     = "10.0.1.0/24"
 #subnet_cidr_block_private_1 = "10.0.2.0/24"
 #subnet_cidr_block_private_2 = "10.0.3.0/24"
 num_rds_private_subnets      = 2
