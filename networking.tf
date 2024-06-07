@@ -72,7 +72,6 @@ data "aws_vpc_endpoint" "lab_firewall_endpoint" {
   depends_on = [aws_networkfirewall_firewall.lab_firewall]
 }
 
-
 # Route table Internet Gateway
 # Routes traffic that's destined for the public subnet to the firewall subnet. 
 # The customer subnet shows the private IP address range behind the publicly assigned address. 
@@ -90,6 +89,12 @@ resource "aws_route_table" "lab_rt_internet_gateway" {
   tags = {
     Name = "Internet Gateway Lab Route Table"
   }
+}
+
+# Requieres explicit edge association
+resource "aws_route_table_association" "public_subnet_association" {
+  gateway_id     = aws_internet_gateway.gw.id
+  route_table_id = aws_route_table.lab_rt_internet_gateway.id
 }
 
 # Route table Firewall to able flow connectivity throw Internet on public subnets
@@ -124,7 +129,6 @@ resource "aws_route_table" "lab_rt_protected" {
   route {
     cidr_block      = var.cidr_block_all_traffic
     vpc_endpoint_id = data.aws_vpc_endpoint.lab_firewall_endpoint.id
-    #gateway_id = aws_internet_gateway.gw.id
   }
 
   tags = {
