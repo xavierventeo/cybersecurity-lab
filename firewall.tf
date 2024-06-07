@@ -25,6 +25,26 @@ resource "aws_networkfirewall_rule_group" "stateful_rule_group" {
   }
 }
 
+# Stateful rule to block forbidden domains
+resource "aws_networkfirewall_rule_group" "domains_black_list_rule_group" {
+  capacity = 100
+  name     = "stateful-rule-domain-black-list-group"
+  type     = "STATEFUL"
+  rule_group {
+    rules_source {
+      rules_source_list {
+        generated_rules_type = "DENYLIST"
+        target_types         = ["HTTP_HOST", "TLS_SNI"]
+        targets              = ["www.amazon.com"]
+      }
+    }
+  }
+
+  tags = {
+    Name = "stateful-rule-domain-black-list-group"
+  }
+}
+
 # Stateless rule to monitor all SSL traffic
 resource "aws_networkfirewall_rule_group" "stateless_rule_group" {
   name     = "stateless-rule-group"
@@ -67,6 +87,10 @@ resource "aws_networkfirewall_firewall_policy" "lab_firewall_policy" {
 
     stateful_rule_group_reference {
       resource_arn = aws_networkfirewall_rule_group.stateful_rule_group.arn
+    }
+
+    stateful_rule_group_reference {
+      resource_arn = aws_networkfirewall_rule_group.domains_black_list_rule_group.arn
     }
 
     stateless_rule_group_reference {
