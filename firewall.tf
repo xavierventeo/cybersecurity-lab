@@ -45,7 +45,7 @@ resource "aws_networkfirewall_rule_group" "domains_black_list_rule_group" {
   }
 }
 
-# Stateless rule to monitor all SSL traffic
+# Stateless rule to monitor all SMB traffic
 resource "aws_networkfirewall_rule_group" "stateless_rule_group" {
   name     = "stateless-rule-group"
   capacity = 100
