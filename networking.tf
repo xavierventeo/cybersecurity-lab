@@ -214,6 +214,14 @@ resource "aws_security_group" "protected_instances_sg" {
     cidr_blocks = [var.allowed_ip_address] # cidr_blocks expects a list of strings
   }
 
+  # Inbound rule efimeral ports to allow FTP Open to network
+  ingress {
+    from_port   = var.ephemeral_port_ini_for_external_ftp
+    to_port     = var.ephemeral_port_final_for_external_ftp
+    protocol    = var.tcp_protocol
+    cidr_blocks = [var.allowed_ip_address] # cidr_blocks expects a list of strings
+  }
+
   # Outbound rule allows all outbound traffic
   egress {
     from_port = var.zero_port

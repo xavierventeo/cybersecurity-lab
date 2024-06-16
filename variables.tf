@@ -75,6 +75,16 @@ variable "zero_port" {
   default     = 0
 }
 
+variable "ephemeral_port_ini_for_external_ftp" {
+  description = "Port for allowed public access to FTP"
+  default     = 1025
+}
+
+variable "ephemeral_port_final_for_external_ftp" {
+  description = "Port for allowed public access to FTP"
+  default     = 1029
+}
+
 variable "allowed_ip_address" {
   description = "Allowed IP address for SSH access"
   type        = string
