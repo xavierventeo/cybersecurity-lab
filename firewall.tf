@@ -61,8 +61,8 @@ resource "aws_networkfirewall_rule_group" "stateless_rule_group" {
             match_attributes {
               protocols = [6] # TCP Protocol
               destination_port {
-                from_port = 22
-                to_port   = 22
+                from_port = 445
+                to_port   = 445
               }
               source {
                 address_definition = "0.0.0.0/0"
