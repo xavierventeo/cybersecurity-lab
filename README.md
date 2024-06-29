@@ -25,6 +25,10 @@ Before you begin, ensure you have the following tools installed:
 - [AWS CLI](https://aws.amazon.com/cli/)
 - An [AWS account](https://aws.amazon.com/free/?all-free-tier) and the [associated credentials](https://docs.aws.amazon.com/IAM/latest/UserGuide/security-creds.html) that allow you to create resources. These credentials must be configured for the AWS provider (see [Authentication and Configuration](https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration) section in AWS terraform provider documentation.)
 
+### Related Repositories
+
+Repository which include basic infrastructure to deploy a SIEM: [Infrastructure for Wazuh SIEM](https://github.com/xavierventeo/terraform-wazuh-aws-ec2-elastic-ip)
+
 ### Usage
 
 1. Clone this repository to your local machine:
